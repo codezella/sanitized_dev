@@ -2075,7 +2075,7 @@ Screens:
                         Fill: =RGBA(0, 0, 0, 0)
                         Font: =Font.'Segoe UI'
                         Height: =27
-                        HtmlText: ="<span style='font-weight:600'>Assigned To</span>"
+                        HtmlText: ="<span style='font-weight:600'>Assigned To" & If(IsBlank(peAssigned.Selected.Mail), " " & ReqMark, "") & "</span>"
                         PaddingBottom: =0
                         PaddingLeft: =0
                         PaddingRight: =0
@@ -2084,6 +2084,29 @@ Screens:
                         Width: =Parent.Width * 0.43
                         X: =Parent.Width * 0.52
                         Y: =172
+                  - peRingAssigned:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =peAssigned.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (IsBlank(peAssigned.Selected.Mail))
+                        Width: =peAssigned.Width + 4
+                        X: =peAssigned.X - 2
+                        Y: =peAssigned.Y - 2
                   - peAssigned:
                       Control: ModernCombobox@1.1.1
                       Properties:
@@ -2862,6 +2885,7 @@ Screens:
                         Bad: peStatus.Selected.Value = "Complete" && IsBlank(peEnd.SelectedDate) },
                       { Field: "Description",
                         Bad: IsBlank(peDesc.Text) },
+                      { Field: "Assigned To", Bad: IsBlank(peAssigned.Selected.Mail) },
                       { Field: "Due Date must be on or after Start Date",
                         Bad: !IsBlank(peStart.SelectedDate) && !IsBlank(peDue.SelectedDate)
                              && peDue.SelectedDate < peStart.SelectedDate }
