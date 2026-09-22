@@ -1,0 +1,3100 @@
+Screens:
+  scrMain:
+    Properties:
+      Fill: =RGBA(255, 255, 255, 1)
+      LoadingSpinnerColor: =RGBA(0, 120, 212, 1)
+    Children:
+      - galMain:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            Height: =Parent.Height - 288
+            Items: |-
+              =With({ q: Lower(txtSearch.Text),
+                      fs: ddStatusFilter.Selected.Value,
+                      fa: ddApprFilter.Selected.Value },
+                  SortByColumns(
+                      Filter(colRows As r,
+                          Switch(r.Lvl,
+                              1, CountRows(Filter(colRows,
+                                     Lvl >= 2 && SectionKey = r.RowKey
+                                     && (IsBlank(q) || q in Lower(RowTitle))
+                                     && (IsBlank(fs) || fs = "All Statuses" || StatusText = fs)
+                                     && (IsBlank(fa) || fa = "All Appraisals" || AppraisalText = fa)
+                                     && (varTab <> "mine" || Lower(AssignedMail) = MyMail
+                                         || MyMail in CollabMails)
+                                     && (varTab <> "roadmap" || Roadmap))) > 0
+                                 || ((varTab = "all") && IsBlank(q)
+                                     && (IsBlank(fs) || fs = "All Statuses")
+                                     && (IsBlank(fa) || fa = "All Appraisals")
+                                     && CountRows(Filter(colRows,
+                                            Lvl >= 3 && SectionKey = r.RowKey)) = 0),
+                              2, (r.SectionKey in Filter(colExpanded, Tab = varTab).Key)
+                                 && (CountRows(Filter(colRows,
+                                     Lvl >= 2 && LOEKey = r.RowKey
+                                     && (IsBlank(q) || q in Lower(RowTitle))
+                                     && (IsBlank(fs) || fs = "All Statuses" || StatusText = fs)
+                                     && (IsBlank(fa) || fa = "All Appraisals" || AppraisalText = fa)
+                                     && (varTab <> "mine" || Lower(AssignedMail) = MyMail
+                                         || MyMail in CollabMails)
+                                     && (varTab <> "roadmap" || Roadmap))) > 0
+                                 || ((varTab = "all") && IsBlank(q)
+                                     && (IsBlank(fs) || fs = "All Statuses")
+                                     && (IsBlank(fa) || fa = "All Appraisals")
+                                     && CountRows(Filter(colRows,
+                                            Lvl >= 3 && LOEKey = r.RowKey)) = 0)),
+                              (r.SectionKey in Filter(colExpanded, Tab = varTab).Key)
+                              && (r.LOEKey in Filter(colExpanded, Tab = varTab).Key)
+                              && (IsBlank(q) || q in Lower(r.RowTitle))
+                              && (IsBlank(fs) || fs = "All Statuses" || r.StatusText = fs)
+                              && (IsBlank(fa) || fa = "All Appraisals" || r.AppraisalText = fa)
+                              && (varTab <> "mine" || Lower(r.AssignedMail) = MyMail
+                                  || MyMail in r.CollabMails)
+                              && (varTab <> "roadmap" || r.Roadmap))),
+                      "SortPath", SortOrder.Ascending))
+            TemplatePadding: =3
+            TemplateSize: =56
+            Visible: =varTab <> "analytics"
+            Width: =Parent.Width
+            Y: =288
+          Children:
+            - recRowBand:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =Switch(ThisItem.Lvl, 1, SecTint, 2, LoeTint, RowFill)
+                  Height: =56
+                  OnSelect: |-
+                    =If(ThisItem.Lvl = 1,
+                        If(ThisItem.RowKey in Filter(colExpanded, Tab = varTab).Key,
+                            Remove(colExpanded, LookUp(colExpanded, Tab = varTab && Key = ThisItem.RowKey)),
+                            Collect(colExpanded, { Tab: varTab, Key: ThisItem.RowKey })),
+                        Set(varSelected,
+                            LookUp('BOB Integrated Master Schedule (IMS)', ID = ThisItem.ItemId));
+                        Set(varPanelMode, "read"))
+                  Width: =Parent.TemplateWidth
+            - recBandTop:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =If(ThisItem.Lvl = 1, SecEdge, LoeEdge)
+                  Height: =2
+                  Visible: =ThisItem.Lvl <= 2
+                  Width: =Parent.TemplateWidth
+            - recBandBottom:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =If(ThisItem.Lvl = 1, SecEdge, LoeEdge)
+                  Height: =2
+                  Visible: =ThisItem.Lvl <= 2
+                  Width: =Parent.TemplateWidth
+                  Y: =54
+            - icoToggle:
+                Control: ModernButton@1.0.0
+                Properties:
+                  AccessibleLabel: ="Expand or collapse group"
+                  Appearance: =ButtonAppearance.Transparent
+                  Color: =ColorValue("#444444")
+                  Icon: =If(ThisItem.RowKey in Filter(colExpanded, Tab = varTab).Key, "ChevronDown", "ChevronRight")
+                  Layout: =ButtonLayout.IconOnly
+                  OnSelect: |-
+                    =If(ThisItem.RowKey in Filter(colExpanded, Tab = varTab).Key,
+                        Remove(colExpanded, LookUp(colExpanded, Tab = varTab && Key = ThisItem.RowKey)),
+                        Collect(colExpanded, { Tab: varTab, Key: ThisItem.RowKey }))
+                  Visible: =ThisItem.Lvl <= 2
+                  Width: =32
+                  X: =If(ThisItem.Lvl = 1, 10, 34)
+                  Y: =12
+            - lblRowChip:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =LookUp(LevelColors, Lvl = ThisItem.Lvl, Fill)
+                  FontWeight: =FontWeight.Bold
+                  Height: =56
+                  OnSelect: |-
+                    =Set(varSelected,
+                         LookUp('BOB Integrated Master Schedule (IMS)', ID = ThisItem.ItemId));
+                    Set(varPanelMode, "read")
+                  Size: =12
+                  Text: =If(ThisItem.Lvl = 3, "EPIC", "TASK")
+                  Visible: =ThisItem.Lvl >= 3
+                  Width: =56
+                  X: =If(ThisItem.Lvl = 3, 80, 112)
+            - lblRowTitle:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =InkOnLight
+                  FontWeight: =If(ThisItem.Lvl <= 2, FontWeight.Bold, FontWeight.Normal)
+                  Height: =56
+                  OnSelect: |-
+                    =If(ThisItem.Lvl = 1,
+                        If(ThisItem.RowKey in Filter(colExpanded, Tab = varTab).Key,
+                            Remove(colExpanded, LookUp(colExpanded, Tab = varTab && Key = ThisItem.RowKey)),
+                            Collect(colExpanded, { Tab: varTab, Key: ThisItem.RowKey })),
+                        Set(varSelected,
+                            LookUp('BOB Integrated Master Schedule (IMS)', ID = ThisItem.ItemId));
+                        Set(varPanelMode, "read"))
+                  Size: =13
+                  Text: |-
+                    =If(ThisItem.Lvl <= 2,
+                        ThisItem.RowTitle & "     " &
+                        CountRows(Filter(colRows,
+                            Lvl >= 2 && RowKey <> ThisItem.RowKey
+                            && (SectionKey = ThisItem.RowKey || LOEKey = ThisItem.RowKey)
+                            && (IsBlank(txtSearch.Text) || Lower(txtSearch.Text) in Lower(RowTitle))
+                            && (IsBlank(ddStatusFilter.Selected.Value)
+                                || ddStatusFilter.Selected.Value = "All Statuses"
+                                || StatusText = ddStatusFilter.Selected.Value)
+                            && (IsBlank(ddApprFilter.Selected.Value)
+                                || ddApprFilter.Selected.Value = "All Appraisals"
+                                || AppraisalText = ddApprFilter.Selected.Value)
+                            && (varTab <> "mine" || Lower(AssignedMail) = MyMail || MyMail in CollabMails)
+                            && (varTab <> "roadmap" || Roadmap))) & " items",
+                        ThisItem.RowTitle)
+                  Width: =(Parent.TemplateWidth * 0.30) - Switch(ThisItem.Lvl, 1, 48, 2, 72, 3, 140, 172) + 40
+                  X: =Switch(ThisItem.Lvl, 1, 48, 2, 72, 3, 140, 172)
+            - lblRowStatus:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =LookUp(StatusTable, Status = ThisItem.StatusText, Color)
+                  FontWeight: =FontWeight.Semibold
+                  Height: =56
+                  OnSelect: |-
+                    =Set(varSelected,
+                         LookUp('BOB Integrated Master Schedule (IMS)', ID = ThisItem.ItemId));
+                    Set(varPanelMode, "read")
+                  Size: =13
+                  Text: =ThisItem.StatusText
+                  Visible: =ThisItem.Lvl >= 3
+                  Width: =Parent.TemplateWidth * 0.11
+                  X: =Parent.TemplateWidth * 0.34
+            - lblRowLevel:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =LookUp(LevelColors, Lvl = ThisItem.Lvl, Fill)
+                  FontWeight: =FontWeight.Bold
+                  Height: =56
+                  OnSelect: |-
+                    =Set(varSelected,
+                         LookUp('BOB Integrated Master Schedule (IMS)', ID = ThisItem.ItemId));
+                    Set(varPanelMode, "read")
+                  Size: =12
+                  Text: =If(ThisItem.Lvl = 3, "EPIC", "TASK")
+                  Visible: =ThisItem.Lvl >= 3
+                  Width: =Parent.TemplateWidth * 0.09
+                  X: =Parent.TemplateWidth * 0.46
+            - lblRowAssigned:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =InkOnLight
+                  Height: =56
+                  OnSelect: |-
+                    =Set(varSelected,
+                         LookUp('BOB Integrated Master Schedule (IMS)', ID = ThisItem.ItemId));
+                    Set(varPanelMode, "read")
+                  Size: =13
+                  Text: |-
+                    =ThisItem.AssignedName &
+                    If(Lower(ThisItem.AssignedMail) = MyMail, " (you)", "")
+                  Visible: =ThisItem.Lvl >= 3
+                  Width: =Parent.TemplateWidth * 0.15
+                  X: =Parent.TemplateWidth * 0.56
+            - lblRowStart:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: |-
+                    =If(!IsBlank(ThisItem.RowStart) && ThisItem.RowStart > Today(),
+                        LookUp(StatusTable, Status = ThisItem.StatusText, Color),
+                        InkOnLight)
+                  FontWeight: |-
+                    =If(!IsBlank(ThisItem.RowStart) && ThisItem.RowStart > Today(),
+                        FontWeight.Bold, FontWeight.Normal)
+                  Height: =56
+                  OnSelect: |-
+                    =Set(varSelected,
+                         LookUp('BOB Integrated Master Schedule (IMS)', ID = ThisItem.ItemId));
+                    Set(varPanelMode, "read")
+                  Size: =13
+                  Text: =If(!IsBlank(ThisItem.RowStart), Text(ThisItem.RowStart, "mm/dd/yyyy"), "-")
+                  Visible: =ThisItem.Lvl >= 3
+                  Width: =Parent.TemplateWidth * 0.12
+                  X: =Parent.TemplateWidth * 0.72
+            - lblRowDue:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =InkOnLight
+                  Height: =56
+                  OnSelect: |-
+                    =Set(varSelected,
+                         LookUp('BOB Integrated Master Schedule (IMS)', ID = ThisItem.ItemId));
+                    Set(varPanelMode, "read")
+                  Size: =13
+                  Text: =If(!IsBlank(ThisItem.RowDue), Text(ThisItem.RowDue, "mm/dd/yyyy"), "-")
+                  Visible: =ThisItem.Lvl >= 3
+                  Width: =Parent.TemplateWidth * 0.12
+                  X: =Parent.TemplateWidth * 0.85
+      - recLogo:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Navy
+            Height: =96
+            Width: =240
+      - imgSeal:
+          Control: Image@2.2.3
+          Properties:
+            Height: =72
+            Image: =cisa_logo_lg
+            Width: =200
+            X: =18
+            Y: =12
+      - recMasthead:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Navy
+            Height: =96
+            Width: =Parent.Width - 240
+            X: =240
+      - recHeadDivider:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =RGBA(255, 255, 255, 0.55)
+            Height: =recLogo.Height
+            Width: =2
+            X: =240
+      - lblMasthead:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =Color.White
+            FontWeight: =FontWeight.Semibold
+            Height: =96
+            Size: =26
+            Text: ="BOB - Integrated Master Schedule"
+            Width: =800
+            X: =280
+      - lblTabAll:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =Navy
+            FontWeight: =FontWeight.Semibold
+            Height: =52
+            OnSelect: =Set(varTab, "all")
+            Size: =If(Parent.Width < 1200, 16, 20)
+            Text: ="All Work"
+            Width: =If(Parent.Width < 1200, 92, 116)
+            X: =40
+            Y: =108
+      - lblCountAll:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =If(varTab = "all", Navy, ColorValue("#E3E1DF"))
+            Color: =If(varTab = "all", Color.White, LineGrey)
+            Height: =28
+            OnSelect: =Set(varTab, "all")
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =12
+            Text: =CountRows(Filter(colRows, Lvl >= 2 && StatusText <> "Cancelled"))
+            Width: =If(Parent.Width < 1200, 44, 56)
+            X: =lblTabAll.X + lblTabAll.Width + 6
+            Y: =120
+      - recTabAllUnder:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Navy
+            Height: =4
+            Visible: =varTab = "all"
+            Width: =lblCountAll.X + lblCountAll.Width - lblTabAll.X
+            X: =lblTabAll.X
+            Y: =162
+      - lblTabMine:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =Navy
+            FontWeight: =FontWeight.Semibold
+            Height: =52
+            OnSelect: =Set(varTab, "mine")
+            Size: =If(Parent.Width < 1200, 16, 20)
+            Text: ="My Items"
+            Width: =If(Parent.Width < 1200, 96, 120)
+            X: =lblCountAll.X + lblCountAll.Width + If(Parent.Width < 1200, 28, 64)
+            Y: =108
+      - lblCountMine:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =If(varTab = "mine", Navy, ColorValue("#E3E1DF"))
+            Color: =If(varTab = "mine", Color.White, LineGrey)
+            Height: =28
+            OnSelect: =Set(varTab, "mine")
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =12
+            Text: |-
+              =CountRows(Filter(colRows, Lvl >= 2 &&
+                  (Lower(AssignedMail) = MyMail || MyMail in CollabMails)))
+            Width: =If(Parent.Width < 1200, 44, 56)
+            X: =lblTabMine.X + lblTabMine.Width + 6
+            Y: =120
+      - recTabMineUnder:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Navy
+            Height: =4
+            Visible: =varTab = "mine"
+            Width: =lblCountMine.X + lblCountMine.Width - lblTabMine.X
+            X: =lblTabMine.X
+            Y: =162
+      - lblTabRoad:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =Navy
+            FontWeight: =FontWeight.Semibold
+            Height: =52
+            OnSelect: =Set(varTab, "roadmap")
+            Size: =If(Parent.Width < 1200, 16, 20)
+            Text: ="Roadmap"
+            Width: =If(Parent.Width < 1200, 92, 112)
+            X: =lblCountMine.X + lblCountMine.Width + If(Parent.Width < 1200, 28, 64)
+            Y: =108
+      - lblCountRoad:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =If(varTab = "roadmap", Navy, ColorValue("#E3E1DF"))
+            Color: =If(varTab = "roadmap", Color.White, LineGrey)
+            Height: =28
+            OnSelect: =Set(varTab, "roadmap")
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =12
+            Text: =CountRows(Filter(colRows, Lvl >= 2 && Roadmap))
+            Width: =If(Parent.Width < 1200, 44, 56)
+            X: =lblTabRoad.X + lblTabRoad.Width + 6
+            Y: =120
+      - recTabRoadUnder:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Navy
+            Height: =4
+            Visible: =varTab = "roadmap"
+            Width: =lblCountRoad.X + lblCountRoad.Width - lblTabRoad.X
+            X: =lblTabRoad.X
+            Y: =162
+      - lblTabAnalytics:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =Navy
+            FontWeight: =FontWeight.Semibold
+            Height: =52
+            OnSelect: =Set(varTab, "analytics")
+            Size: =If(Parent.Width < 1200, 16, 20)
+            Text: ="Analytics"
+            Width: =If(Parent.Width < 1200, 88, 110)
+            X: =lblCountRoad.X + lblCountRoad.Width + If(Parent.Width < 1200, 28, 64)
+            Y: =108
+      - recTabAnalyticsUnder:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Navy
+            Height: =4
+            Visible: =varTab = "analytics"
+            Width: =lblTabAnalytics.Width
+            X: =lblTabAnalytics.X
+            Y: =162
+      - icoRefresh:
+          Control: ModernButton@1.0.0
+          Properties:
+            AccessibleLabel: ="Reload work items"
+            Appearance: =ButtonAppearance.Transparent
+            Color: =Accent
+            Height: =36
+            Icon: ="ArrowClockwise"
+            Layout: =ButtonLayout.IconOnly
+            OnSelect: |-
+              =ClearCollect(colItems,
+                  AddColumns(
+                      'BOB Integrated Master Schedule (IMS)',
+                      SectionText,  Coalesce(ThisRecord.Section.Label, "Unassigned"),
+                      LevelText,    ThisRecord.Level.Value,
+                      StatusText,   Coalesce(ThisRecord.Status.Value, "Not Started")
+                  ));
+              ClearCollect(colRows,
+                  ForAll(Distinct(colItems, SectionText) As s,
+                      {
+                          RowKey: "S|" & s.Value, SectionKey: "S|" & s.Value,
+                          LOEKey: Blank(), EpicKey: Blank(),
+                          Lvl: 1, RowTitle: s.Value, ItemId: Blank(),
+                          StatusText: Blank(), AppraisalText: Blank(),
+                          AssignedName: Blank(), AssignedMail: Blank(), CollabMails: Blank(),
+                          RowStart: Blank(), RowDue: Blank(), Roadmap: false,
+                          SortPath: s.Value
+                      }));
+              Collect(colRows,
+                  ForAll(Filter(colItems, LevelText = "Line of Effort") As it,
+                      {
+                          RowKey: "L|" & it.SectionText & "|" & it.'Task Name',
+                          SectionKey: "S|" & it.SectionText,
+                          LOEKey: "L|" & it.SectionText & "|" & it.'Task Name', EpicKey: Blank(),
+                          Lvl: 2, RowTitle: it.'Task Name', ItemId: it.ID,
+                          StatusText: it.StatusText, AppraisalText: it.Appraisal.Value,
+                          AssignedName: it.Assigned.DisplayName, AssignedMail: it.Assigned.Email,
+                          CollabMails: Concat(it.Collaborators, Email, ";"),
+                          RowStart: it.Start, RowDue: it.Due, Roadmap: it.'Roadmap Item',
+                          SortPath: it.SectionText & "|" & it.'Task Name'
+                      }));
+              Collect(colRows,
+                  ForAll(Filter(colItems, LevelText = "Epic") As it,
+                      {
+                          RowKey: "E|" & it.SectionText & "|" & it.'Line of Effort' & "|" & it.'Task Name',
+                          SectionKey: "S|" & it.SectionText,
+                          LOEKey: "L|" & it.SectionText & "|" & it.'Line of Effort',
+                          EpicKey: "E|" & it.SectionText & "|" & it.'Line of Effort' & "|" & it.'Task Name',
+                          Lvl: 3, RowTitle: it.'Task Name', ItemId: it.ID,
+                          StatusText: it.StatusText, AppraisalText: it.Appraisal.Value,
+                          AssignedName: it.Assigned.DisplayName, AssignedMail: it.Assigned.Email,
+                          CollabMails: Concat(it.Collaborators, Email, ";"),
+                          RowStart: it.Start, RowDue: it.Due, Roadmap: it.'Roadmap Item',
+                          SortPath: it.SectionText & "|" & it.'Line of Effort' & "|" & it.'Task Name'
+                      }));
+              Collect(colRows,
+                  ForAll(Filter(colItems, LevelText = "Task") As it,
+                      {
+                          RowKey: "T|" & it.ID,
+                          SectionKey: "S|" & it.SectionText,
+                          LOEKey: "L|" & it.SectionText & "|" & it.'Line of Effort',
+                          EpicKey: "E|" & it.SectionText & "|" & it.'Line of Effort' & "|" & it.Epic,
+                          Lvl: 4, RowTitle: it.'Task Name', ItemId: it.ID,
+                          StatusText: it.StatusText, AppraisalText: it.Appraisal.Value,
+                          AssignedName: it.Assigned.DisplayName, AssignedMail: it.Assigned.Email,
+                          CollabMails: Concat(it.Collaborators, Email, ";"),
+                          RowStart: it.Start, RowDue: it.Due, Roadmap: it.'Roadmap Item',
+                          SortPath: it.SectionText & "|" & it.'Line of Effort' & "|" & it.Epic & "|" & it.'Task Name'
+                      }))
+            Tooltip: ="Reload work items"
+            Visible: =varTab <> "analytics"
+            Width: =36
+            X: |
+              =Max(lblTabAnalytics.X + lblTabAnalytics.Width + 20,
+                   Parent.Width - If(Parent.Width < 1200, 292, 330))
+            Y: =116
+      - lblExport:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =ButtonAppearance.Transparent
+            Color: =Accent
+            DisplayMode: =If(Coalesce(varExporting, false), DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =40
+            OnSelect: "=Set(varExporting, true);\r\n              Notify(\"Preparing your export…\", NotificationType.Information);\r\n              With({ fq:\r\n                  If(varTab = \"analytics\",\r\n                      Switch(Coalesce(varTile, \"total\"),\r\n                          \"loe\",   \"ItemLevel eq 'Line of Effort'\",\r\n                          \"epic\",  \"ItemLevel eq 'Epic'\",\r\n                          \"task\",  \"ItemLevel eq 'Task'\",\r\n                          \"risk\",  \"(ItemLevel eq 'Line of Effort' or ItemLevel eq 'Epic' or ItemLevel eq 'Task') and Status eq 'At Risk'\",\r\n                          \"delay\", \"(ItemLevel eq 'Line of Effort' or ItemLevel eq 'Epic' or ItemLevel eq 'Task') and Status eq 'Delayed'\",\r\n                          \"block\", \"(ItemLevel eq 'Line of Effort' or ItemLevel eq 'Epic' or ItemLevel eq 'Task') and Status eq 'Blocked'\",\r\n                          \"(ItemLevel eq 'Line of Effort' or ItemLevel eq 'Epic' or ItemLevel eq 'Task')\")\r\n                      & If(Coalesce(varQuarter, 0) > 0,\r\n                           \" and Due ge '\" & Text(varQStart, \"yyyy-mm-dd\") &\r\n                           \"' and Due lt '\" & Text(varQEnd, \"yyyy-mm-dd\") & \"'\",\r\n                           \"\"),\r\n                      \"(ItemLevel eq 'Line of Effort' or ItemLevel eq 'Epic' or ItemLevel eq 'Task')\"\r\n                      & If(!IsBlank(ddStatusFilter.Selected.Value)\r\n                           && ddStatusFilter.Selected.Value <> \"All Statuses\",\r\n                           \" and Status eq '\" & ddStatusFilter.Selected.Value & \"'\", \"\")\r\n                      & If(!IsBlank(ddApprFilter.Selected.Value)\r\n                           && ddApprFilter.Selected.Value <> \"All Appraisals\",\r\n                           \" and Appraisal eq '\" & ddApprFilter.Selected.Value & \"'\", \"\")\r\n                      & If(varTab = \"roadmap\", \" and RoadmapItem eq 1\", \"\")) },\r\n                  With({ result: 'BOBIMS-ExportToExcel'.Run(\r\n                              fq,\r\n                              If(varTab <> \"analytics\", Lower(Trim(txtSearch.Text)), \"\"),\r\n                              If(varTab = \"mine\", \r\n                                IfError(Coalesce(MyMail, Lower(User().Email)),\r\n                                    Lower(User().Email)),\r\n                              \"\"),\r\n                              Switch(varTab,\r\n                                  \"analytics\", \"Analytics-\" & Coalesce(varTile, \"total\") &\r\n                                      If(Coalesce(varQuarter, 0) > 0, \"-Q\" & varQuarter, \"\"),\r\n                                  \"mine\", \"MyItems\",\r\n                                  \"roadmap\", \"Roadmap\",\r\n                                  \"AllWork\")\r\n                              & \"-\" & Text(Now(), \"yyyymmdd-hhmmss\")) },\r\n                      If(result.rowcount = \"0\",\r\n                          Notify(\"Nothing to export in the current view.\",\r\n                                 NotificationType.Warning),\r\n                          !IsBlank(result.fileurl),\r\n                          Launch(result.fileurl),\r\n                          Notify(\"Export failed — try again or contact the admin.\",\r\n                                 NotificationType.Error))));\r\n              Set(varExporting, false)\r\n       "
+            Size: =If(Parent.Width < 1200, 12, 13)
+            Text: =If(Coalesce(varExporting, false), "Exporting…", "Export")
+            Width: =If(Parent.Width < 1200, 72, 90)
+            X: |-
+              =//icoRefresh.X + icoRefresh.Width + 6
+              icoRefresh.X + If(varTab = "analytics", 0, icoRefresh.Width + 6)
+            Y: =114
+      - lblNewItem:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =ButtonAppearance.Transparent
+            Color: =Accent
+            Height: =40
+            OnSelect: |-
+              =Set(varSelected, Blank());
+              Set(varChain, Blank()); Set(varParent, Blank());
+              Set(varErrors, Filter(Table({ Field: "", Bad: false }), Bad));
+              Reset(pnLevel); Reset(pnSection); Reset(pnParent);
+              Reset(pnTitle); Reset(pnDesc); Reset(pnAssigned); Reset(pnCollab);
+              Reset(pnStatus); Reset(pnStart); Reset(pnDue);
+              Set(varPanelMode, "new")
+            Size: =If(Parent.Width < 1200, 12, 13)
+            Text: ="+ New Item"
+            Visible: =(varCanWrite || varCanWriteET) && varTab <> "analytics"
+            Width: =If(Parent.Width < 1200, 116, 140)
+            X: =lblExport.X + lblExport.Width + 6
+            Y: =114
+      - recTabBarLine:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =LineGrey
+            Height: =1
+            Width: =Parent.Width
+            Y: =166
+      - txtSearch:
+          Control: ModernTextInput@1.1.1
+          Properties:
+            Height: =42
+            Placeholder: ="Search work items"
+            RadiusBottomLeft: =10
+            RadiusBottomRight: =10
+            RadiusTopLeft: =10
+            RadiusTopRight: =10
+            TriggerOutput: =TriggerOutput.Delayed
+            Visible: =varTab <> "analytics"
+            Width: =Min(440, Parent.Width * 0.34)
+            X: =40
+            Y: =184
+      - ddStatusFilter:
+          Control: ModernDropdown@1.0.2
+          Properties:
+            Default: |-
+              ={ Value: "All Statuses" }
+            Height: =42
+            ItemDisplayText: =ThisItem.Value
+            Items: =["All Statuses", "Not Started", "Paused", "In Progress", "In Review", "At Risk", "Delayed", "Blocked", "Complete", "Cancelled"]
+            RadiusBottomLeft: =10
+            RadiusBottomRight: =10
+            RadiusTopLeft: =10
+            RadiusTopRight: =10
+            Visible: =varTab <> "analytics"
+            Width: =Min(210, Parent.Width * 0.17)
+            X: =txtSearch.X + txtSearch.Width + If(Parent.Width < 1200, 16, 24)
+            Y: =184
+      - ddApprFilter:
+          Control: ModernDropdown@1.0.2
+          Properties:
+            Default: |-
+              ={ Value: "All Appraisals" }
+            Height: =42
+            ItemDisplayText: =ThisItem.Value
+            Items: =["All Appraisals", "Not Appraised", "Achieved Excellence", "Exceeded Expectations", "Achieved Expectations", "Unacceptable"]
+            RadiusBottomLeft: =10
+            RadiusBottomRight: =10
+            RadiusTopLeft: =10
+            RadiusTopRight: =10
+            Visible: =varTab <> "analytics"
+            Width: =Min(220, Parent.Width * 0.17)
+            X: =ddStatusFilter.X + ddStatusFilter.Width + If(Parent.Width < 1200, 16, 24)
+            Y: =184
+      - btnExpandAll:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =ButtonAppearance.Transparent
+            Color: =Accent
+            Height: =38
+            OnSelect: |-
+              =RemoveIf(colExpanded, Tab = varTab);
+              Collect(colExpanded, ForAll(Filter(colRows, Lvl <= 2) As r, { Tab: varTab, Key: r.RowKey }))
+            Size: =If(Parent.Width < 1200, 12, 13)
+            Text: ="Expand all"
+            Visible: =varTab <> "analytics"
+            Width: =If(Parent.Width < 1200, 96, 120)
+            X: |-
+              =Max(ddApprFilter.X + ddApprFilter.Width + 16,
+                   Parent.Width - If(Parent.Width < 1200, 252, 292))
+            Y: =186
+      - btnCollapseAll:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =ButtonAppearance.Transparent
+            Color: =Accent
+            Height: =38
+            OnSelect: =RemoveIf(colExpanded, Tab = varTab)
+            Size: =If(Parent.Width < 1200, 12, 13)
+            Text: ="Collapse all"
+            Visible: =varTab <> "analytics"
+            Width: =If(Parent.Width < 1200, 108, 132)
+            X: =btnExpandAll.X + btnExpandAll.Width + If(Parent.Width < 1200, 4, 12)
+            Y: =186
+      - recHead:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =HeadFill
+            Height: =48
+            Visible: =varTab <> "analytics"
+            Width: =Parent.Width
+            Y: =240
+      - lblHTitle:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =48
+            Size: =12
+            Text: ="TITLE"
+            Visible: =varTab <> "analytics"
+            Width: =Parent.Width * 0.30
+            X: =40
+            Y: =240
+      - lblHStatus:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =48
+            Size: =12
+            Text: ="STATUS"
+            Visible: =varTab <> "analytics"
+            Width: =Parent.Width * 0.11
+            X: =Parent.Width * 0.34
+            Y: =240
+      - lblHLevel:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =48
+            Size: =12
+            Text: ="LEVEL"
+            Visible: =varTab <> "analytics"
+            Width: =Parent.Width * 0.09
+            X: =Parent.Width * 0.46
+            Y: =240
+      - lblHAssigned:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =48
+            Size: =12
+            Text: ="ASSIGNED"
+            Visible: =varTab <> "analytics"
+            Width: =Parent.Width * 0.15
+            X: =Parent.Width * 0.56
+            Y: =240
+      - lblHStart:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =48
+            Size: =12
+            Text: ="START DATE"
+            Visible: =varTab <> "analytics"
+            Width: =Parent.Width * 0.12
+            X: =Parent.Width * 0.72
+            Y: =240
+      - lblHDue:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =48
+            Size: =12
+            Text: ="DUE DATE"
+            Visible: =varTab <> "analytics"
+            Width: =Parent.Width * 0.12
+            X: =Parent.Width * 0.85
+            Y: =240
+      - lblEmpty:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkSoft
+            Height: =44
+            Size: =13
+            Text: ="No items match."
+            Visible: =varTab <> "analytics" && CountRows(galMain.AllItems) = 0
+            Width: =400
+            X: =40
+            Y: =310
+      - recScrim:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =RGBA(0, 0, 0, 0.25)
+            Height: =Parent.Height
+            OnSelect: =Set(varErrors, Blank()); Set(varConfirmDeleteId, Blank()); Set(varPanelMode, "")
+            Visible: =varPanelMode <> ""
+            Width: =Parent.Width
+      - lblQFilterCap:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkOnLight
+            FontWeight: =FontWeight.Semibold
+            Height: =40
+            Size: =13
+            Text: ="Filter by Fiscal Quarter:"
+            Visible: =varTab = "analytics"
+            Width: =186
+            X: =40
+            Y: =184
+      - btnQ1:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =If(Coalesce(varQuarter, 0) = 1, Navy, ColorValue("#E3E1DF"))
+            Color: =If(Coalesce(varQuarter, 0) = 1, Color.White, LineGrey)
+            Height: =40
+            OnSelect: |-
+              =If(Coalesce(varQuarter, 0) = 1,
+                  Set(varQuarter, 0),
+                  Set(varQuarter, 1);
+                  With({ fy: Date(If(Month(Today()) >= 10, Year(Today()), Year(Today()) - 1), 10, 1) },
+                      Set(varQStart, fy);
+                      Set(varQEnd, DateAdd(fy, 3, TimeUnit.Months))))
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =13
+            Text: ="Q1"
+            Visible: =varTab = "analytics"
+            Width: =56
+            X: =238
+            Y: =184
+      - btnQ2:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =If(Coalesce(varQuarter, 0) = 2, Navy, ColorValue("#E3E1DF"))
+            Color: =If(Coalesce(varQuarter, 0) = 2, Color.White, LineGrey)
+            Height: =40
+            OnSelect: |-
+              =If(Coalesce(varQuarter, 0) = 2,
+                  Set(varQuarter, 0),
+                  Set(varQuarter, 2);
+                  With({ fy: Date(If(Month(Today()) >= 10, Year(Today()), Year(Today()) - 1), 10, 1) },
+                      Set(varQStart, DateAdd(fy, 3, TimeUnit.Months));
+                      Set(varQEnd, DateAdd(fy, 6, TimeUnit.Months))))
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =13
+            Text: ="Q2"
+            Visible: =varTab = "analytics"
+            Width: =56
+            X: =btnQ1.X + btnQ1.Width + 12
+            Y: =184
+      - btnQ3:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =If(Coalesce(varQuarter, 0) = 3, Navy, ColorValue("#E3E1DF"))
+            Color: =If(Coalesce(varQuarter, 0) = 3, Color.White, LineGrey)
+            Height: =40
+            OnSelect: |-
+              =If(Coalesce(varQuarter, 0) = 3,
+                  Set(varQuarter, 0),
+                  Set(varQuarter, 3);
+                  With({ fy: Date(If(Month(Today()) >= 10, Year(Today()), Year(Today()) - 1), 10, 1) },
+                      Set(varQStart, DateAdd(fy, 6, TimeUnit.Months));
+                      Set(varQEnd, DateAdd(fy, 9, TimeUnit.Months))))
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =13
+            Text: ="Q3"
+            Visible: =varTab = "analytics"
+            Width: =56
+            X: =btnQ2.X + btnQ2.Width + 12
+            Y: =184
+      - btnQ4:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =If(Coalesce(varQuarter, 0) = 4, Navy, ColorValue("#E3E1DF"))
+            Color: =If(Coalesce(varQuarter, 0) = 4, Color.White, LineGrey)
+            Height: =40
+            OnSelect: |-
+              =If(Coalesce(varQuarter, 0) = 4,
+                  Set(varQuarter, 0),
+                  Set(varQuarter, 4);
+                  With({ fy: Date(If(Month(Today()) >= 10, Year(Today()), Year(Today()) - 1), 10, 1) },
+                      Set(varQStart, DateAdd(fy, 9, TimeUnit.Months));
+                      Set(varQEnd, DateAdd(fy, 12, TimeUnit.Months))))
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =13
+            Text: ="Q4"
+            Visible: =varTab = "analytics"
+            Width: =56
+            X: =btnQ3.X + btnQ3.Width + 12
+            Y: =184
+      - recTileTotal:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =If(Coalesce(varTile, "total") = "total", Navy, LineGrey)
+            BorderThickness: =If(Coalesce(varTile, "total") = "total", 2, 1)
+            Fill: =Color.White
+            Height: =104
+            HoverFill: =Self.Fill
+            OnSelect: =Set(varTile, "total")
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Text: =""
+            Visible: =varTab = "analytics"
+            Width: =(Parent.Width - 224) / 7
+            X: =40
+            Y: =250
+      - lblTileTotalCap:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkOnLight
+            Height: =30
+            OnSelect: =Set(varTile, "total")
+            Size: =If(Parent.Width < 1200, 12, 13)
+            Text: ="Total Items"
+            Visible: =varTab = "analytics"
+            Width: =recTileTotal.Width - 32
+            X: =recTileTotal.X + 16
+            Y: =266
+      - lblTileTotalNum:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkOnLight
+            FontWeight: =FontWeight.Bold
+            Height: =50
+            OnSelect: =Set(varTile, "total")
+            Size: =If(Parent.Width < 1200, 22, 28)
+            Text: |-
+              =CountRows(Filter(colRows, Lvl >= 2 && StatusText <> "Cancelled" &&
+                  (Coalesce(varQuarter, 0) = 0 ||
+                   (!IsBlank(RowDue) && RowDue >= varQStart && RowDue < varQEnd))))
+            Visible: =varTab = "analytics"
+            Width: =recTileTotal.Width - 32
+            X: =recTileTotal.X + 16
+            Y: =292
+      - recTileLoe:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =If(Coalesce(varTile, "total") = "loe", Navy, LineGrey)
+            BorderThickness: =If(Coalesce(varTile, "total") = "loe", 2, 1)
+            Fill: =Color.White
+            Height: =104
+            HoverFill: =Self.Fill
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "loe", "total", "loe"))
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Text: =""
+            Visible: =varTab = "analytics"
+            Width: =(Parent.Width - 224) / 7
+            X: =recTileTotal.X + recTileTotal.Width + 24
+            Y: =250
+      - lblTileLoeCap:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkOnLight
+            Height: =30
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "loe", "total", "loe"))
+            Size: =If(Parent.Width < 1200, 12, 13)
+            Text: ="Lines of Effort"
+            Visible: =varTab = "analytics"
+            Width: =recTileLoe.Width - 32
+            X: =recTileLoe.X + 16
+            Y: =266
+      - lblTileLoeNum:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =LookUp(LevelColors, Lvl = 2, Fill)
+            FontWeight: =FontWeight.Bold
+            Height: =50
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "loe", "total", "loe"))
+            Size: =If(Parent.Width < 1200, 22, 28)
+            Text: |-
+              =CountRows(Filter(colRows, Lvl = 2 && StatusText <> "Cancelled" &&
+                  (Coalesce(varQuarter, 0) = 0 ||
+                   (!IsBlank(RowDue) && RowDue >= varQStart && RowDue < varQEnd))))
+            Visible: =varTab = "analytics"
+            Width: =recTileLoe.Width - 32
+            X: =recTileLoe.X + 16
+            Y: =292
+      - recTileEpic:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =If(Coalesce(varTile, "total") = "epic", Navy, LineGrey)
+            BorderThickness: =If(Coalesce(varTile, "total") = "epic", 2, 1)
+            Fill: =Color.White
+            Height: =104
+            HoverFill: =Self.Fill
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "epic", "total", "epic"))
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Text: =""
+            Visible: =varTab = "analytics"
+            Width: =(Parent.Width - 224) / 7
+            X: =recTileLoe.X + recTileLoe.Width + 24
+            Y: =250
+      - lblTileEpicCap:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkOnLight
+            Height: =30
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "epic", "total", "epic"))
+            Size: =If(Parent.Width < 1200, 12, 13)
+            Text: ="Epics"
+            Visible: =varTab = "analytics"
+            Width: =recTileEpic.Width - 32
+            X: =recTileEpic.X + 16
+            Y: =266
+      - lblTileEpicNum:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =LookUp(LevelColors, Lvl = 3, Fill)
+            FontWeight: =FontWeight.Bold
+            Height: =50
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "epic", "total", "epic"))
+            Size: =If(Parent.Width < 1200, 22, 28)
+            Text: |-
+              =CountRows(Filter(colRows, Lvl = 3 && StatusText <> "Cancelled" &&
+                  (Coalesce(varQuarter, 0) = 0 ||
+                   (!IsBlank(RowDue) && RowDue >= varQStart && RowDue < varQEnd))))
+            Visible: =varTab = "analytics"
+            Width: =recTileEpic.Width - 32
+            X: =recTileEpic.X + 16
+            Y: =292
+      - recTileTask:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =If(Coalesce(varTile, "total") = "task", Navy, LineGrey)
+            BorderThickness: =If(Coalesce(varTile, "total") = "task", 2, 1)
+            Fill: =Color.White
+            Height: =104
+            HoverFill: =Self.Fill
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "task", "total", "task"))
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Text: =""
+            Visible: =varTab = "analytics"
+            Width: =(Parent.Width - 224) / 7
+            X: =recTileEpic.X + recTileEpic.Width + 24
+            Y: =250
+      - lblTileTaskCap:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkOnLight
+            Height: =30
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "task", "total", "task"))
+            Size: =If(Parent.Width < 1200, 12, 13)
+            Text: ="Tasks"
+            Visible: =varTab = "analytics"
+            Width: =recTileTask.Width - 32
+            X: =recTileTask.X + 16
+            Y: =266
+      - lblTileTaskNum:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =LookUp(LevelColors, Lvl = 4, Fill)
+            FontWeight: =FontWeight.Bold
+            Height: =50
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "task", "total", "task"))
+            Size: =If(Parent.Width < 1200, 22, 28)
+            Text: |-
+              =CountRows(Filter(colRows, Lvl = 4 && StatusText <> "Cancelled" &&
+                  (Coalesce(varQuarter, 0) = 0 ||
+                   (!IsBlank(RowDue) && RowDue >= varQStart && RowDue < varQEnd))))
+            Visible: =varTab = "analytics"
+            Width: =recTileTask.Width - 32
+            X: =recTileTask.X + 16
+            Y: =292
+      - recTileRisk:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =If(Coalesce(varTile, "total") = "risk", Navy, LineGrey)
+            BorderThickness: =If(Coalesce(varTile, "total") = "risk", 2, 1)
+            Fill: =Color.White
+            Height: =104
+            HoverFill: =Self.Fill
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "risk", "total", "risk"))
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Text: =""
+            Visible: =varTab = "analytics"
+            Width: =(Parent.Width - 224) / 7
+            X: =recTileTask.X + recTileTask.Width + 24
+            Y: =250
+      - lblTileRiskCap:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkOnLight
+            Height: =30
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "risk", "total", "risk"))
+            Size: =If(Parent.Width < 1200, 12, 13)
+            Text: ="At Risk"
+            Visible: =varTab = "analytics"
+            Width: =recTileRisk.Width - 32
+            X: =recTileRisk.X + 16
+            Y: =266
+      - lblTileRiskNum:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =LookUp(StatusTable, Status = "At Risk", Color)
+            FontWeight: =FontWeight.Bold
+            Height: =50
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "risk", "total", "risk"))
+            Size: =If(Parent.Width < 1200, 22, 28)
+            Text: |-
+              =CountRows(Filter(colRows, Lvl >= 2 && StatusText = "At Risk" &&
+                  (Coalesce(varQuarter, 0) = 0 ||
+                   (!IsBlank(RowDue) && RowDue >= varQStart && RowDue < varQEnd))))
+            Visible: =varTab = "analytics"
+            Width: =recTileRisk.Width - 32
+            X: =recTileRisk.X + 16
+            Y: =292
+      - recTileDelay:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =If(Coalesce(varTile, "total") = "delay", Navy, LineGrey)
+            BorderThickness: =If(Coalesce(varTile, "total") = "delay", 2, 1)
+            Fill: =Color.White
+            Height: =104
+            HoverFill: =Self.Fill
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "delay", "total", "delay"))
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Text: =""
+            Visible: =varTab = "analytics"
+            Width: =(Parent.Width - 224) / 7
+            X: =recTileRisk.X + recTileRisk.Width + 24
+            Y: =250
+      - lblTileDelayCap:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkOnLight
+            Height: =30
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "delay", "total", "delay"))
+            Size: =If(Parent.Width < 1200, 12, 13)
+            Text: ="Delayed"
+            Visible: =varTab = "analytics"
+            Width: =recTileDelay.Width - 32
+            X: =recTileDelay.X + 16
+            Y: =266
+      - lblTileDelayNum:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =LookUp(StatusTable, Status = "Delayed", Color)
+            FontWeight: =FontWeight.Bold
+            Height: =50
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "delay", "total", "delay"))
+            Size: =If(Parent.Width < 1200, 22, 28)
+            Text: |-
+              =CountRows(Filter(colRows, Lvl >= 2 && StatusText = "Delayed" &&
+                  (Coalesce(varQuarter, 0) = 0 ||
+                   (!IsBlank(RowDue) && RowDue >= varQStart && RowDue < varQEnd))))
+            Visible: =varTab = "analytics"
+            Width: =recTileDelay.Width - 32
+            X: =recTileDelay.X + 16
+            Y: =292
+      - recTileBlock:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =If(Coalesce(varTile, "total") = "block", Navy, LineGrey)
+            BorderThickness: =If(Coalesce(varTile, "total") = "block", 2, 1)
+            Fill: =Color.White
+            Height: =104
+            HoverFill: =Self.Fill
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "block", "total", "block"))
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Text: =""
+            Visible: =varTab = "analytics"
+            Width: =(Parent.Width - 224) / 7
+            X: =recTileDelay.X + recTileDelay.Width + 24
+            Y: =250
+      - lblTileBlockCap:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkOnLight
+            Height: =30
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "block", "total", "block"))
+            Size: =If(Parent.Width < 1200, 12, 13)
+            Text: ="Blocked"
+            Visible: =varTab = "analytics"
+            Width: =recTileBlock.Width - 32
+            X: =recTileBlock.X + 16
+            Y: =266
+      - lblTileBlockNum:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =LookUp(StatusTable, Status = "Blocked", Color)
+            FontWeight: =FontWeight.Bold
+            Height: =50
+            OnSelect: =Set(varTile, If(Coalesce(varTile, "total") = "block", "total", "block"))
+            Size: =If(Parent.Width < 1200, 22, 28)
+            Text: |-
+              =CountRows(Filter(colRows, Lvl >= 2 && StatusText = "Blocked" &&
+                  (Coalesce(varQuarter, 0) = 0 ||
+                   (!IsBlank(RowDue) && RowDue >= varQStart && RowDue < varQEnd))))
+            Visible: =varTab = "analytics"
+            Width: =recTileBlock.Width - 32
+            X: =recTileBlock.X + 16
+            Y: =292
+      - recAttnHead:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =HeadFill
+            Height: =44
+            Visible: =varTab = "analytics"
+            Width: =Parent.Width
+            Y: =390
+      - lblAHTitle:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =44
+            Size: =12
+            Text: ="TITLE"
+            Visible: =varTab = "analytics"
+            Width: =Parent.Width * 0.26
+            X: =Parent.Width * 0.26
+            Y: =390
+      - lblAHLevel:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =44
+            Size: =12
+            Text: ="LEVEL"
+            Visible: =varTab = "analytics"
+            Width: =Parent.Width * 0.06
+            X: =Parent.Width * 0.51
+            Y: =390
+      - lblAHStatus:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =44
+            Size: =12
+            Text: ="STATUS"
+            Visible: =varTab = "analytics"
+            Width: =Parent.Width * 0.09
+            X: =Parent.Width * 0.70
+            Y: =390
+      - lblAHSection:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =44
+            Size: =12
+            Text: ="SECTION"
+            Visible: =varTab = "analytics"
+            Width: =Parent.Width * 0.10
+            X: =40
+            Y: =390
+      - lblAHLoe:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =44
+            Size: =12
+            Text: ="LINE OF EFFORT"
+            Visible: =varTab = "analytics"
+            Width: =Parent.Width * 0.13
+            X: =Parent.Width * 0.12
+            Y: =390
+      - lblAHAssigned:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =44
+            Size: =12
+            Text: ="ASSIGNED"
+            Visible: =varTab = "analytics"
+            Width: =Parent.Width * 0.11
+            X: =Parent.Width * 0.58
+            Y: =390
+      - lblAHDue:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#444444")
+            Height: =44
+            Size: =12
+            Text: ="DUE DATE"
+            Visible: =varTab = "analytics"
+            Width: =Parent.Width * 0.09
+            X: =Parent.Width * 0.80
+            Y: =390
+      - lblAttnEmpty:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkSoft
+            Height: =44
+            Size: =13
+            Text: ="No items match this filter."
+            Visible: =varTab = "analytics" && CountRows(galAttn.AllItems) = 0
+            Width: =440
+            X: =40
+            Y: =452
+      - galAttn:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            Height: =Parent.Height - 434
+            Items: |-
+              =SortByColumns(
+                  Filter(colRows,
+                      Switch(Coalesce(varTile, "total"),
+                          "loe",   Lvl = 2 && StatusText <> "Cancelled",
+                          "epic",  Lvl = 3 && StatusText <> "Cancelled",
+                          "task",  Lvl = 4 && StatusText <> "Cancelled",
+                          "risk",  Lvl >= 2 && StatusText = "At Risk",
+                          "delay", Lvl >= 2 && StatusText = "Delayed",
+                          "block", Lvl >= 2 && StatusText = "Blocked",
+                          Lvl >= 2 && StatusText <> "Cancelled")
+                      && (Coalesce(varQuarter, 0) = 0 ||
+                          (!IsBlank(RowDue) && RowDue >= varQStart && RowDue < varQEnd))),
+                  "RowDue", SortOrder.Ascending)
+            TemplatePadding: =2
+            TemplateSize: =56
+            Visible: =varTab = "analytics"
+            Width: =Parent.Width
+            Y: =434
+          Children:
+            - recAttnRow:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =RowFill
+                  Height: =54
+                  OnSelect: |-
+                    =Set(varSelected,
+                         LookUp('BOB Integrated Master Schedule (IMS)', ID = ThisItem.ItemId));
+                    Set(varPanelMode, "read")
+                  Width: =Parent.TemplateWidth
+            - lblARTitle:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =InkOnLight
+                  Height: =54
+                  OnSelect: |-
+                    =Set(varSelected,
+                         LookUp('BOB Integrated Master Schedule (IMS)', ID = ThisItem.ItemId));
+                    Set(varPanelMode, "read")
+                  Size: =13
+                  Text: =ThisItem.RowTitle
+                  Width: =Parent.TemplateWidth * 0.26
+                  X: =Parent.TemplateWidth * 0.26
+            - lblARLevel:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =LookUp(LevelColors, Lvl = ThisItem.Lvl, Fill)
+                  FontWeight: =FontWeight.Bold
+                  Height: =54
+                  Size: =12
+                  Text: =Switch(ThisItem.Lvl, 2, "LOE", 3, "EPIC", "TASK")
+                  Width: =Parent.TemplateWidth * 0.06
+                  X: =Parent.TemplateWidth * 0.51
+            - lblARStatus:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =LookUp(StatusTable, Status = ThisItem.StatusText, Color)
+                  FontWeight: =FontWeight.Bold
+                  Height: =54
+                  Size: =12
+                  Text: =Upper(ThisItem.StatusText)
+                  Width: =Parent.TemplateWidth * 0.09
+                  X: =Parent.TemplateWidth * 0.70
+            - lblARSection:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =InkOnLight
+                  Height: =54
+                  Size: =13
+                  Text: =Mid(ThisItem.SectionKey, 3)
+                  Width: =Parent.TemplateWidth * 0.10
+                  X: =40
+            - lblARLoe:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =InkOnLight
+                  Height: =54
+                  Size: =13
+                  Text: |-
+                    =If(!IsBlank(ThisItem.LOEKey),
+                        Last(Split(ThisItem.LOEKey, "|")).Value, "-")
+                  Width: =Parent.TemplateWidth * 0.13
+                  X: =Parent.TemplateWidth * 0.12
+            - lblARAssigned:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: =InkOnLight
+                  Height: =54
+                  Size: =13
+                  Text: =ThisItem.AssignedName
+                  Width: =Parent.TemplateWidth * 0.11
+                  X: =Parent.TemplateWidth * 0.58
+            - lblARDue:
+                Control: ModernText@1.0.0
+                Properties:
+                  Color: |-
+                    =If(IsBlank(ThisItem.RowDue), InkOnLight,
+                        With({ d: DateDiff(Today(), ThisItem.RowDue, TimeUnit.Days) },
+                            If(d <= 7, ColorValue("#C0392B"),
+                               d <= 30, ColorValue("#C19C00"),
+                               InkOnLight)))
+                  FontWeight: |-
+                    =If(!IsBlank(ThisItem.RowDue)
+                        && DateDiff(Today(), ThisItem.RowDue, TimeUnit.Days) <= 30,
+                        FontWeight.Bold, FontWeight.Normal)
+                  Height: =54
+                  Size: =13
+                  Text: =If(!IsBlank(ThisItem.RowDue), Text(ThisItem.RowDue, "mm/dd/yyyy"), "-")
+                  Width: =Parent.TemplateWidth * 0.09
+                  X: =Parent.TemplateWidth * 0.80
+            - btnARView:
+                Control: ModernButton@1.0.0
+                Properties:
+                  Appearance: =ButtonAppearance.Transparent
+                  Color: =Accent
+                  Height: =40
+                  OnSelect: |-
+                    =Set(varSelected,
+                         LookUp('BOB Integrated Master Schedule (IMS)', ID = ThisItem.ItemId));
+                    Set(varPanelMode, "read")
+                  Size: =13
+                  Text: ="View Item"
+                  Width: =104
+                  X: =Parent.TemplateWidth - 140
+                  Y: =7
+      - recPanel:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Color.White
+            Height: =Parent.Height
+            Visible: =varPanelMode <> ""
+            Width: =Parent.Width / 2
+            X: =Parent.Width / 2
+      - recPanelHead:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =Color.Black
+            Height: =96
+            Visible: =varPanelMode <> ""
+            Width: =Parent.Width / 2
+            X: =Parent.Width / 2
+      - lblPanelCrumb:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =Color.White
+            Height: =26
+            Size: =11
+            Text: |-
+              =If(varPanelMode = "new", "NEW WORK ITEM",
+                  Upper(varSelected.Level.Value) & " - " &
+                  Upper(Coalesce(varSelected.Section.Label, "UNASSIGNED")) & " / " &
+                  Upper(Coalesce(varSelected.'Line of Effort', "-")))
+            Visible: =varPanelMode <> ""
+            Width: =Parent.Width / 2 - 100
+            X: =Parent.Width / 2 + 26
+            Y: =14
+      - lblPanelTitle:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =Color.White
+            FontWeight: =FontWeight.Bold
+            Height: =44
+            Size: =17
+            Text: =If(varPanelMode = "new", "Data Entry", varSelected.'Task Name')
+            Visible: =varPanelMode <> ""
+            Width: =Parent.Width / 2 - 100
+            X: =Parent.Width / 2 + 26
+            Y: =42
+      - icoPanelClose:
+          Control: ModernButton@1.0.0
+          Properties:
+            AccessibleLabel: ="Close panel"
+            Appearance: =ButtonAppearance.Transparent
+            Color: =Color.White
+            Height: =30
+            Icon: ="Dismiss"
+            Layout: =ButtonLayout.IconOnly
+            OnSelect: =Set(varErrors, Blank()); Set(varConfirmDeleteId, Blank()); Set(varPanelMode, "")
+            Visible: =varPanelMode <> ""
+            Width: =30
+            X: =Parent.Width - 46
+            Y: =12
+      - conPanelBody:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Height: =Parent.Height - 96 - 130
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutOverflowY: =LayoutOverflow.Scroll
+            Visible: =varPanelMode <> ""
+            Width: =Parent.Width / 2
+            X: =Parent.Width / 2
+            Y: |
+              =96
+          Children:
+            - conReadBody:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =660 + recCommentsBox.Height + 24
+                  LayoutMinHeight: =0
+                  Visible: =varPanelMode = "read"
+                  Width: =conPanelBody.Width - 16
+                Children:
+                  - prBadgeStatus:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =LookUp(StatusTable, Status = varSelected.Status.Value, Color)
+                        FontWeight: =FontWeight.Bold
+                        Height: =30
+                        Size: =14
+                        Text: =varSelected.Status.Value
+                        Width: =Parent.Width * 0.24
+                        X: =Parent.Width * 0.05
+                        Y: =16
+                  - prBadgeLevel:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =LookUp(LevelColors, LevelName = varSelected.Level.Value, Fill)
+                        FontWeight: =FontWeight.Bold
+                        Height: =30
+                        Size: =14
+                        Text: =Upper(varSelected.Level.Value)
+                        Width: =Parent.Width * 0.24
+                        X: =Parent.Width * 0.31
+                        Y: =16
+                  - prBadgeRoadmap:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =Navy
+                        FontWeight: =FontWeight.Bold
+                        Height: =30
+                        Size: =14
+                        Text: ="Roadmap Item"
+                        Visible: =varSelected.'Roadmap Item'
+                        Width: =Parent.Width * 0.28
+                        X: =Parent.Width * 0.57
+                        Y: =16
+                  - prCapSection:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =27
+                        Size: =12
+                        Text: ="Section"
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =60
+                  - prValSection:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: =Coalesce(varSelected.Section.Label, "-")
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =86
+                  - prCapLOE:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =27
+                        Size: =12
+                        Text: ="Line of Effort"
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =60
+                  - prValLOE:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: =Coalesce(varSelected.'Line of Effort', "-")
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =86
+                  - prCapAssigned:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =27
+                        Size: =12
+                        Text: ="Assigned To"
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =132
+                  - prValAssigned:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: =Coalesce(varSelected.Assigned.DisplayName, "-")
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =158
+                  - prCapCollab:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =27
+                        Size: =12
+                        Text: ="Collaborators"
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =132
+                  - prValCollab:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: =Coalesce(Concat(varSelected.Collaborators, DisplayName, ", "), "-")
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =158
+                  - prCapStart:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =27
+                        Size: =12
+                        Text: ="Start Date"
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =204
+                  - prValStart:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: |-
+                          =If(!IsBlank(varSelected.Start) && varSelected.Start > Today(),
+                              LookUp(StatusTable, Status = varSelected.Status.Value, Color),
+                              InkOnLight)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: =If(!IsBlank(varSelected.Start), Text(varSelected.Start, "mm/dd/yyyy"), "-")
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =230
+                  - prCapDue:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =27
+                        Size: =12
+                        Text: ="Due Date"
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =204
+                  - prValDue:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: =If(!IsBlank(varSelected.Due), Text(varSelected.Due, "mm/dd/yyyy"), "-")
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =230
+                  - prCapEnd:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =27
+                        Size: =12
+                        Text: ="End Date"
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =276
+                  - prValEnd:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: =If(!IsBlank(varSelected.End), Text(varSelected.End, "mm/dd/yyyy"), "-")
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =302
+                  - prCapUpdated:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =27
+                        Size: =12
+                        Text: ="Last Updated"
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =276
+                  - prValUpdated:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: =If(!IsBlank(varSelected.'Last Status Date'), Text(varSelected.'Last Status Date', "mm/dd/yyyy"), "-")
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =302
+                  - prCapAppraisal:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =27
+                        Size: =12
+                        Text: ="Appraisal"
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =348
+                  - prValAppraisal:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: =Coalesce(varSelected.Appraisal.Value, "-")
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =374
+                  - prCapRoadmap:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =27
+                        Size: =12
+                        Text: ="Roadmap"
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =348
+                  - prValRoadmap:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: =If(varSelected.'Roadmap Item', "Yes", "No")
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =374
+                  - prCapStatus:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: ="Status"
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =420
+                  - prValStatus:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =LookUp(StatusTable, Status = varSelected.Status.Value, Color)
+                        FontWeight: =FontWeight.Bold
+                        Height: =30
+                        Size: =14
+                        Text: =varSelected.Status.Value
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =448
+                  - prCapDescription:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: ="Description"
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =492
+                  - recDescBox:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Fill: =BoxFill
+                        Height: =96
+                        HoverFill: =Self.Fill
+                        PressedFill: =Self.Fill
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =520
+                  - prValDescription:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Height: =78
+                        Size: =12
+                        Text: =Coalesce(varSelected.Description, "—")
+                        VerticalAlign: =VerticalAlign.Top
+                        Width: =Parent.Width * 0.90 - 28
+                        X: =Parent.Width * 0.05 + 14
+                        Y: =530
+                  - prCapComments:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        Size: =14
+                        Text: |-
+                          =With({ n: CountRows(Filter('BOB Integrated Master Schedule (IMS) Comments',
+                                                      'Work Item'.Id = varSelected.ID)) },
+                              n & If(n = 1, " comment", " comments"))
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =632
+                  - recCommentsBox:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Fill: =BoxFill
+                        Height: =galComments.Height + 20
+                        HoverFill: =Self.Fill
+                        PressedFill: =Self.Fill
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =660
+                  - galComments:
+                      Control: Gallery@2.15.0
+                      Variant: Vertical
+                      Properties:
+                        Height: |-
+                          =Max(1, CountRows(Filter('BOB Integrated Master Schedule (IMS) Comments',
+                                                   'Work Item'.Id = varSelected.ID))) * 84 + 12
+                        Items: |-
+                          =SortByColumns(
+                              Filter('BOB Integrated Master Schedule (IMS) Comments',
+                                     'Work Item'.Id = varSelected.ID),
+                              "Created", SortOrder.Descending)
+                        TemplatePadding: =6
+                        TemplateSize: =78
+                        Width: =Parent.Width * 0.90 - 28
+                        X: =Parent.Width * 0.05 + 14
+                        Y: =670
+                      Children:
+                        - lblCommentAvatar:
+                            Control: Badge@0.0.24
+                            Properties:
+                              Appearance: ='BadgeCanvas.Appearance'.Filled
+                              Content: |-
+                                =Upper(Left(Concat(Split(ThisItem.'Created By'.DisplayName, " "),
+                                                   Left(Value, 1)), 2))
+                              Height: =30
+                              Shape: ='BadgeCanvas.Shape'.Circular
+                              ThemeColor: ='BadgeCanvas.ThemeColor'.Brand
+                              Width: =30
+                              Y: =2
+                        - lblCommentImage:
+                            Control: Image@2.2.3
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              BorderThickness: =2
+                              DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                              DisabledFill: =RGBA(0, 0, 0, 0)
+                              FocusedBorderThickness: =4
+                              Height: =30
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              HoverFill: =RGBA(0, 0, 0, 0)
+                              Image: =IfError(Office365Users.UserPhotoV2(ThisItem.'Created By'.Email),SampleImage)
+                              OnSelect: =Select(Parent)
+                              PressedBorderColor: =RGBA(0, 0, 0, 0)
+                              PressedFill: =RGBA(0, 0, 0, 0)
+                              RadiusBottomLeft: =100
+                              RadiusBottomRight: =100
+                              RadiusTopLeft: =100
+                              RadiusTopRight: =100
+                              Width: =30
+                              Y: =2
+                        - lblCommentWho:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              Color: =InkSoft
+                              Height: =26
+                              Size: =11
+                              Text: |-
+                                =Upper(ThisItem.'Created By'.DisplayName) & " on " &
+                                Text(ThisItem.Created, "dd/mmm/yy h:mm AM/PM")
+                              Width: =Parent.TemplateWidth - 50
+                              X: =30
+                              Y: =5
+                        - lblCommentText:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              AutoHeight: =true
+                              Height: =50
+                              Size: =12
+                              Text: |-
+                                =ThisItem.Comment &
+                                If(!IsBlank(ThisItem.'Status Change'), " (" & ThisItem.'Status Change' & ")", "")
+                              Width: =Parent.TemplateWidth - 50
+                              X: =1
+                              Y: =28
+                  - recCommentsWheelShield:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =recCommentsBox.Height
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =660
+            - conEditBody:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =698
+                  LayoutMinHeight: =0
+                  Visible: =varPanelMode = "edit"
+                  Width: =conPanelBody.Width - 16
+                Children:
+                  - peCapStatus:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Status</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =16
+                  - peStatus:
+                      Control: ModernDropdown@1.0.2
+                      Properties:
+                        Default: |-
+                          ={ Value: varSelected.Status.Value }
+                        Height: =38
+                        ItemDisplayText: =ThisItem.Value
+                        Items: =["Not Started", "Paused", "In Progress", "In Review", "At Risk", "Delayed", "Blocked", "Complete", "Cancelled"]
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =42
+                  - peCapAppraisal:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Appraisal</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =16
+                  - peAppraisal:
+                      Control: ModernDropdown@1.0.2
+                      Properties:
+                        Default: |-
+                          ={ Value: varSelected.Appraisal.Value }
+                        Height: =38
+                        ItemDisplayText: =ThisItem.Value
+                        Items: =["Not Appraised", "Achieved Excellence", "Exceeded Expectations", "Achieved Expectations", "Unacceptable"]
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =42
+                  - peCapStart:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Start Date" & If(IsBlank(peStart.SelectedDate), " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =94
+                  - peRingStart:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =peStart.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (IsBlank(peStart.SelectedDate))
+                        Width: =peStart.Width + 4
+                        X: =peStart.X - 2
+                        Y: =peStart.Y - 2
+                  - peStart:
+                      Control: ModernDatePicker@1.0.1
+                      Properties:
+                        DefaultDate: =varSelected.Start
+                        Format: ="mm/dd/yyyy"
+                        Height: =38
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =120
+                  - peCapDue:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Due Date" & If(IsBlank(peDue.SelectedDate), " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =94
+                  - peRingDue:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =peDue.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (IsBlank(peDue.SelectedDate)
+                          || (!IsBlank(peStart.SelectedDate) && !IsBlank(peDue.SelectedDate)
+                              && peDue.SelectedDate < peStart.SelectedDate))
+                        Width: =peDue.Width + 4
+                        X: =peDue.X - 2
+                        Y: =peDue.Y - 2
+                  - peDue:
+                      Control: ModernDatePicker@1.0.1
+                      Properties:
+                        DefaultDate: =varSelected.Due
+                        Format: ="mm/dd/yyyy"
+                        Height: =38
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =120
+                  - peCapEnd:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>End Date" & If(peStatus.Selected.Value in ["Complete","Cancelled"] && IsBlank(peEnd.SelectedDate), " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =172
+                  - peRingEnd:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =peEnd.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (peStatus.Selected.Value in ["Complete","Cancelled"]
+                          && (IsBlank(peEnd.SelectedDate)
+                              || (!IsBlank(peStart.SelectedDate) && peEnd.SelectedDate < peStart.SelectedDate)))
+                        Width: =peEnd.Width + 4
+                        X: =peEnd.X - 2
+                        Y: =peEnd.Y - 2
+                  - peEnd:
+                      Control: ModernDatePicker@1.0.1
+                      Properties:
+                        DefaultDate: =If(peStatus.Selected.Value in ["Complete","Cancelled"], Coalesce(varSelected.End, Today()), Blank())
+                        DisplayMode: =If(peStatus.Selected.Value in ["Complete","Cancelled"], DisplayMode.Edit, DisplayMode.Disabled)
+                        Format: ="mm/dd/yyyy"
+                        Height: =38
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =198
+                  - peCapAssigned:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Assigned To" & If(IsBlank(peAssigned.Selected.Mail), " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =172
+                  - peRingAssigned:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =peAssigned.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (IsBlank(peAssigned.Selected.Mail))
+                        Width: =peAssigned.Width + 4
+                        X: =peAssigned.X - 2
+                        Y: =peAssigned.Y - 2
+                  - peAssigned:
+                      Control: ModernCombobox@1.1.1
+                      Properties:
+                        DefaultSelectedItems: |-
+                          =If(!IsBlank(varSelected.Assigned),
+                              Table({ DisplayName: varSelected.Assigned.DisplayName,
+                                      Mail: varSelected.Assigned.Email }))
+                        Height: =38
+                        ItemDisplayText: =ThisItem.DisplayName
+                        Items: |-
+                          =SortByColumns(
+                              Filter(Office365Users.SearchUserV2({ searchTerm: Self.SearchText,
+                                                                   isSearchTermRequired: false,
+                                                                   top: 5 }).value,
+                                  AccountEnabled = true),
+                              "DisplayName", SortOrder.Ascending)
+                        SelectMultiple: =false
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =198
+                  - peCapCollab:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Collaborators</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =250
+                  - peCollab:
+                      Control: ModernCombobox@1.1.1
+                      Properties:
+                        DefaultSelectedItems: |-
+                          =ForAll(varSelected.Collaborators As c,
+                              { DisplayName: c.DisplayName, Mail: c.Email })
+                        Height: =38
+                        ItemDisplayText: =ThisItem.DisplayName
+                        Items: |-
+                          =SortByColumns(
+                              Filter(Office365Users.SearchUserV2({ searchTerm: Self.SearchText,
+                                                                   isSearchTermRequired: false,
+                                                                   top: 5 }).value,
+                                  AccountEnabled = true),
+                              "DisplayName", SortOrder.Ascending)
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =276
+                  - peCapDesc:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Description" & If(IsBlank(peDesc.Text), " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =330
+                  - peRingDesc:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =peDesc.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (IsBlank(peDesc.Text))
+                        Width: =peDesc.Width + 4
+                        X: =peDesc.X - 2
+                        Y: =peDesc.Y - 2
+                  - peDesc:
+                      Control: ModernTextInput@1.1.1
+                      Properties:
+                        Default: =varSelected.Description
+                        Height: =96
+                        Placeholder: ="Enter Text"
+                        Type: =TextInputType.Multiline
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =358
+                  - peCapComment:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkOnLight
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =30
+                        HtmlText: |-
+                          ="<span style='font-weight:600'>Add comment" & If(IsBlank(peComment.Text)
+                              && ((peStatus.Selected.Value <> varOldStatus
+                                   && peStatus.Selected.Value in ["At Risk","Delayed","Blocked","Paused","Cancelled"])
+                                  || (!IsBlank(varSelected.Start) && varSelected.Start < Today()
+                                      && peDue.SelectedDate <> varSelected.Due)),
+                              " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.5
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =468
+                  - peRingComment:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =peComment.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (IsBlank(peComment.Text)
+                          && ((peStatus.Selected.Value <> varOldStatus
+                               && peStatus.Selected.Value in ["At Risk","Delayed","Blocked","Paused","Cancelled"])
+                              || (!IsBlank(varSelected.Start) && varSelected.Start < Today()
+                                  && peDue.SelectedDate <> varSelected.Due)))
+                        Width: =peComment.Width + 4
+                        X: =peComment.X - 2
+                        Y: =peComment.Y - 2
+                  - peComment:
+                      Control: ModernTextInput@1.1.1
+                      Properties:
+                        Height: =96
+                        Placeholder: ="Required when setting At Risk, Delayed, Blocked, Paused, or Cancelled, or when changing the Due Date after work has started — owner and collaborators are notified from no-reply@cisa.dhs.gov"
+                        Type: =TextInputType.Multiline
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =496
+                  - peErr:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =ColorValue("#C0392B")
+                        FontWeight: =FontWeight.Semibold
+                        Height: =44
+                        Size: =12
+                        Text: =If(IsBlank(varErrors) || CountRows(varErrors) = 0, "", Concat(varErrors, Field, " · "))
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =600
+                  - peHint:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        Height: =40
+                        Size: =11
+                        Text: ="Start and Due are always required · Due on/after Start · End Date opens only when Status is Complete or Cancelled (defaults to today, on/after Start) and clears if the item is reopened · Changing Due after work has started needs a comment · Last Updated stamps automatically."
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =646
+            - conNewBody:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =620
+                  LayoutMinHeight: =0
+                  Visible: '=varPanelMode = "new" '
+                  Width: =conPanelBody.Width - 16
+                Children:
+                  - pnCapLevel:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Level" & If(!(pnLevel.Selected.Value in ["Line of Effort", "Epic", "Task"]), " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =16
+                  - pnRingLevel:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =pnLevel.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (!(pnLevel.Selected.Value in ["Line of Effort", "Epic", "Task"]))
+                        Width: =pnLevel.Width + 4
+                        X: =pnLevel.X - 2
+                        Y: =pnLevel.Y - 2
+                  - pnLevel:
+                      Control: ModernDropdown@1.0.2
+                      Properties:
+                        Default: |-
+                          ={ Value: "— select first —" }
+                        Height: =38
+                        ItemDisplayText: =ThisItem.Value
+                        Items: =If(varCanWrite,["— select first —", "Line of Effort", "Epic", "Task"], ["— select first —", "Epic", "Task"])
+                        OnChange: =Set(varChain, Blank()); Reset(pnParent); Reset(pnSection)
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =42
+                  - pnCapParent:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: |-
+                          ="<span style='font-weight:600'>" & Switch(pnLevel.Selected.Value,
+                              "Line of Effort", "Section", "Epic", "Line of Effort", "Task", "Epic", "Parent")
+                          & If(If(pnLevel.Selected.Value = "Line of Effort",
+                                  IsBlank(pnSection.Selected.Label), IsBlank(pnParent.Selected.ID)),
+                               " " & ReqMark, "")
+                          & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =16
+                  - pnRingParent:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =pnParent.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (If(pnLevel.Selected.Value = "Line of Effort",
+                              IsBlank(pnSection.Selected.Label),
+                              pnLevel.Selected.Value in ["Epic", "Task"] && IsBlank(pnParent.Selected.ID)))
+                        Width: =pnParent.Width + 4
+                        X: =pnParent.X - 2
+                        Y: =pnParent.Y - 2
+                  - pnSection:
+                      Control: ModernCombobox@1.1.1
+                      Properties:
+                        Height: =38
+                        InputTextPlaceholder: ="Select Section"
+                        ItemDisplayText: =ThisItem.Label
+                        Items: =SortByColumns(colSections, "Label", SortOrder.Ascending)
+                        OnChange: |-
+                          =Set(varChain, { Section: pnSection.Selected.Label, LOE: Blank(), Epic: Blank() })
+                        SelectMultiple: =false
+                        Visible: =varPanelMode = "new" && pnLevel.Selected.Value = "Line of Effort"
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =42
+                  - pnParent:
+                      Control: ModernDropdown@1.0.2
+                      Properties:
+                        Height: =38
+                        ItemDisplayText: =ThisItem.'Task Name'
+                        Items: |-
+                          =Filter(colItems,
+                              LevelText = If(pnLevel.Selected.Value = "Task", "Epic", "Line of Effort"))
+                        OnChange: |-
+                          =Set(varParent, LookUp(colItems, ID = pnParent.Selected.ID));
+                          Set(varChain, Switch(pnLevel.Selected.Value,
+                              "Task", { Section: varParent.SectionText, LOE: varParent.'Line of Effort', Epic: varParent.'Task Name' },
+                              "Epic", { Section: varParent.SectionText, LOE: varParent.'Task Name', Epic: Blank() }))
+                        Visible: =varPanelMode = "new" && pnLevel.Selected.Value in ["Epic", "Task"]
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =42
+                  - recChainBox:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Fill: =BoxFill
+                        Height: =44
+                        HoverFill: =Self.Fill
+                        PressedFill: =Self.Fill
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =96
+                  - pnChain:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        Height: =36
+                        Size: =11
+                        Text: |-
+                          =If(IsBlank(varChain),
+                              "Section / Line of Effort / Epic auto-fill from the parent — never typed by hand.",
+                              "Auto-filled (read-only):  " & Coalesce(varChain.Section, "-") &
+                              If(!IsBlank(varChain.LOE), "  ›  " & varChain.LOE, "") &
+                              If(!IsBlank(varChain.Epic), "  ›  " & varChain.Epic, ""))
+                        Width: =Parent.Width * 0.90 - 28
+                        X: =Parent.Width * 0.05 + 14
+                        Y: =100
+                  - pnCapTitle:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Title" & If(IsBlank(pnTitle.Text), " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =156
+                  - pnRingTitle:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =pnTitle.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (pnTitle.DisplayMode = DisplayMode.Edit
+                          && (IsBlank(pnTitle.Text)
+                              || CountRows(Filter(colItems,
+                                     LevelText = pnLevel.Selected.Value
+                                     && Lower(Trim('Task Name')) = Lower(Trim(pnTitle.Text)))) > 0))
+                        Width: =pnTitle.Width + 4
+                        X: =pnTitle.X - 2
+                        Y: =pnTitle.Y - 2
+                  - pnTitle:
+                      Control: ModernTextInput@1.1.1
+                      Properties:
+                        DisplayMode: |-
+                          =If(!(pnLevel.Selected.Value in ["Line of Effort", "Epic", "Task"]),
+                              DisplayMode.Disabled, DisplayMode.Edit)
+                        Height: =38
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =182
+                  - pnCapAssigned:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Assigned" & If(IsBlank(pnAssigned.Selected.Mail), " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =156
+                  - pnRingAssigned:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =pnAssigned.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (pnAssigned.DisplayMode = DisplayMode.Edit && IsBlank(pnAssigned.Selected.Mail))
+                        Width: =pnAssigned.Width + 4
+                        X: =pnAssigned.X - 2
+                        Y: =pnAssigned.Y - 2
+                  - pnAssigned:
+                      Control: ModernCombobox@1.1.1
+                      Properties:
+                        DisplayMode: |-
+                          =If(!(pnLevel.Selected.Value in ["Line of Effort", "Epic", "Task"]),
+                              DisplayMode.Disabled, DisplayMode.Edit)
+                        Height: =38
+                        ItemDisplayText: =ThisItem.DisplayName
+                        Items: |-
+                          =SortByColumns(
+                              Filter(Office365Users.SearchUserV2({ searchTerm: Self.SearchText,
+                                                                   isSearchTermRequired: false,
+                                                                   top: 5 }).value,
+                                  AccountEnabled = true),
+                              "DisplayName", SortOrder.Ascending)
+                        SelectMultiple: =false
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =182
+                  - pnCapStatus:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Status</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =234
+                  - pnStatus:
+                      Control: ModernDropdown@1.0.2
+                      Properties:
+                        Default: |-
+                          ={ Value: "Not Started" }
+                        DisplayMode: |-
+                          =If(!(pnLevel.Selected.Value in ["Line of Effort", "Epic", "Task"]),
+                              DisplayMode.Disabled, DisplayMode.Edit)
+                        Height: =38
+                        ItemDisplayText: =ThisItem.Value
+                        Items: =["Not Started", "Paused", "In Progress", "In Review", "At Risk", "Delayed", "Blocked", "Complete", "Cancelled"]
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =260
+                  - pnCapCollab:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Collaborators</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =234
+                  - pnCollab:
+                      Control: ModernCombobox@1.1.1
+                      Properties:
+                        DisplayMode: |-
+                          =If(!(pnLevel.Selected.Value in ["Line of Effort", "Epic", "Task"]),
+                              DisplayMode.Disabled, DisplayMode.Edit)
+                        Height: =38
+                        ItemDisplayText: =ThisItem.DisplayName
+                        Items: |-
+                          =SortByColumns(
+                              Filter(Office365Users.SearchUserV2({ searchTerm: Self.SearchText,
+                                                                   isSearchTermRequired: false,
+                                                                   top: 5 }).value,
+                                  AccountEnabled = true),
+                              "DisplayName", SortOrder.Ascending)
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =260
+                  - pnCapStart:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Start Date" & If(IsBlank(pnStart.SelectedDate), " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =312
+                  - pnRingStart:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =pnStart.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (pnStart.DisplayMode = DisplayMode.Edit
+                          && IsBlank(pnStart.SelectedDate))
+                        Width: =pnStart.Width + 4
+                        X: =pnStart.X - 2
+                        Y: =pnStart.Y - 2
+                  - pnStart:
+                      Control: ModernDatePicker@1.0.1
+                      Properties:
+                        DisplayMode: |-
+                          =If(!(pnLevel.Selected.Value in ["Line of Effort", "Epic", "Task"]),
+                              DisplayMode.Disabled, DisplayMode.Edit)
+                        Format: ="mm/dd/yyyy"
+                        Height: =38
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.05
+                        Y: =338
+                  - pnCapDue:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkSoft
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =27
+                        HtmlText: ="<span style='font-weight:600'>Due Date" & If(IsBlank(pnDue.SelectedDate), " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =312
+                  - pnRingDue:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =pnDue.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (pnDue.DisplayMode = DisplayMode.Edit
+                          && (IsBlank(pnDue.SelectedDate)
+                              || (!IsBlank(pnStart.SelectedDate) && !IsBlank(pnDue.SelectedDate)
+                                  && pnDue.SelectedDate < pnStart.SelectedDate)))
+                        Width: =pnDue.Width + 4
+                        X: =pnDue.X - 2
+                        Y: =pnDue.Y - 2
+                  - pnDue:
+                      Control: ModernDatePicker@1.0.1
+                      Properties:
+                        DisplayMode: |-
+                          =If(!(pnLevel.Selected.Value in ["Line of Effort", "Epic", "Task"]),
+                              DisplayMode.Disabled, DisplayMode.Edit)
+                        Format: ="mm/dd/yyyy"
+                        Height: =38
+                        Width: =Parent.Width * 0.43
+                        X: =Parent.Width * 0.52
+                        Y: =338
+                  - pnCapDesc:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =InkOnLight
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =30
+                        HtmlText: ="<span style='font-weight:600'>Description" & If(IsBlank(pnDesc.Text), " " & ReqMark, "") & "</span>"
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.5
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =392
+                  - pnRingDesc:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#C0392B")
+                        BorderThickness: =2
+                        DisabledBorderColor: =ColorValue("#C0392B")
+                        DisabledColor: =RGBA(0, 0, 0, 0)
+                        DisabledFill: =RGBA(0, 0, 0, 0)
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Height: =pnDesc.Height + 4
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        TabIndex: =-1
+                        Text: =""
+                        Visible: |-
+                          =CountRows(varErrors) > 0
+                          && (pnDesc.DisplayMode = DisplayMode.Edit && IsBlank(pnDesc.Text))
+                        Width: =pnDesc.Width + 4
+                        X: =pnDesc.X - 2
+                        Y: =pnDesc.Y - 2
+                  - pnDesc:
+                      Control: ModernTextInput@1.1.1
+                      Properties:
+                        DisplayMode: |-
+                          =If(!(pnLevel.Selected.Value in ["Line of Effort", "Epic", "Task"]),
+                              DisplayMode.Disabled, DisplayMode.Edit)
+                        Height: =92
+                        Type: =TextInputType.Multiline
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =420
+                  - pnErr:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =ColorValue("#C0392B")
+                        FontWeight: =FontWeight.Semibold
+                        Height: =44
+                        Size: =12
+                        Text: |-
+                          =If(IsBlank(varErrors) || CountRows(varErrors) = 0, "",
+                              "Save blocked — " & Concat(varErrors, Field, ", "))
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =520
+                  - pnHint:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Color: =InkSoft
+                        Height: =45
+                        Size: =11
+                        Text: |-
+                          ="Defaults: Appraisal = Not Appraised (set later) · Roadmap = No · End Date blank until Complete/Cancelled (then set to today) · Last Updated is system-managed."
+                        Width: =Parent.Width * 0.90
+                        X: =Parent.Width * 0.05
+                        Y: =566
+      - prBtnEdit:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =Navy
+            Color: =Color.White
+            DisplayMode: =If(varTab <> "analytics", DisplayMode.Edit, DisplayMode.Disabled)
+            Height: =48
+            OnSelect: =Set(varErrors, Blank()); Set(varOldStatus, varSelected.Status.Value); Set(varPanelMode, "edit")
+            Size: =14
+            Text: ="Edit This Item"
+            Visible: =varPanelMode = "read" && varConfirmDeleteId <> varSelected.ID && (varCanWrite || (varCanWriteET && varSelected.Level.Value in ["Epic", "Task"]))
+            Width: =Parent.Width / 2 - 52
+            X: =Parent.Width / 2 + 26
+            Y: =Parent.Height - 118
+      - prBtnDelete:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =ButtonAppearance.Outline
+            BasePaletteColor: =ColorValue("#C0392B")
+            Color: =ColorValue("#C0392B")
+            DisplayMode: =If(varTab <> "analytics", DisplayMode.Edit, DisplayMode.Disabled)
+            Height: =44
+            OnSelect: =Set(varConfirmDeleteId, varSelected.ID)
+            Size: =13
+            Text: ="Delete This Item"
+            Visible: =varPanelMode = "read" && varIsAdmin && varConfirmDeleteId <> varSelected.ID
+            Width: =Parent.Width / 2 - 52
+            X: =Parent.Width / 2 + 26
+            Y: =Parent.Height - 62
+      - prConfirmMsg:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =ColorValue("#C0392B")
+            FontWeight: =FontWeight.Semibold
+            Height: =28
+            Size: =14
+            Text: ="Are you sure you want to delete this item?"
+            Visible: =varPanelMode = "read" && varIsAdmin && varConfirmDeleteId = varSelected.ID
+            Width: =Parent.Width / 2 - 52
+            X: =Parent.Width / 2 + 26
+            Y: =Parent.Height - 126
+      - prConfirmSub:
+          Control: ModernText@1.0.0
+          Properties:
+            Color: =InkSoft
+            Height: =22
+            Size: =11
+            Text: =Coalesce(varSelected.Level.Value, "Item") & "  ·  " & varSelected.'Task Name' & "  ·  recoverable from the Recycle Bin for 93 days"
+            Visible: =varPanelMode = "read" && varIsAdmin && varConfirmDeleteId = varSelected.ID
+            Width: =Parent.Width / 2 - 52
+            X: =Parent.Width / 2 + 26
+            Y: =Parent.Height - 98
+      - prBtnConfirmDelete:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =ColorValue("#C0392B")
+            Color: =Color.White
+            DisplayMode: =If(varTab <> "analytics", DisplayMode.Edit, DisplayMode.Disabled)
+            Height: =44
+            OnSelect: |-
+              =With({ kids: CountRows(Filter('BOB Integrated Master Schedule (IMS)', 'Parent'.Id = varSelected.ID)) },
+                  If(kids > 0,
+                      Notify("Cannot delete " & varSelected.Level.Value & " """ & varSelected.'Task Name' & """ — it has " &
+                             kids & " child item(s). Reassign or delete the children first.",
+                             NotificationType.Error);
+                      Set(varConfirmDeleteId, Blank()),
+                      With({ lvl: varSelected.Level.Value, nm: varSelected.'Task Name' },
+                          Remove('BOB Integrated Master Schedule (IMS)', varSelected);
+                          RemoveIf(colItems, ID = varSelected.ID);
+                          RemoveIf(colRows, ItemId = varSelected.ID);
+                          Set(varConfirmDeleteId, Blank());
+                          Set(varPanelMode, "");
+                          Notify(lvl & " """ & nm & """ was deleted — recoverable from the Recycle Bin for 93 days.",
+                                 NotificationType.Success, 4000))))
+            Size: =14
+            Text: ="Confirm"
+            Visible: =varPanelMode = "read" && varIsAdmin && varConfirmDeleteId = varSelected.ID
+            Width: =(Parent.Width / 2 - 52 - 12) / 2
+            X: =Parent.Width / 2 + 26
+            Y: =Parent.Height - 62
+      - prBtnCancelDelete:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =ButtonAppearance.Outline
+            BasePaletteColor: =Navy
+            Color: =Navy
+            Height: =44
+            OnSelect: =Set(varConfirmDeleteId, Blank())
+            Size: =14
+            Text: ="Cancel"
+            Visible: =varPanelMode = "read" && varIsAdmin && varConfirmDeleteId = varSelected.ID
+            Width: =(Parent.Width / 2 - 52 - 12) / 2
+            X: =prBtnConfirmDelete.X + prBtnConfirmDelete.Width + 12
+            Y: =Parent.Height - 62
+      - peBtnSave:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =Navy
+            Color: =Color.White
+            DisplayMode: =If((varCanWrite || (varCanWriteET && varSelected.Level.Value in ["Epic", "Task"])), DisplayMode.Edit, DisplayMode.Disabled)
+            Height: =48
+            OnSelect: |-
+              =Set(varErrors,
+                  Filter(Table(
+                      { Field: "A comment is required when setting """ & peStatus.Selected.Value & """",
+                        Bad: peStatus.Selected.Value <> varOldStatus
+                             && peStatus.Selected.Value in ["At Risk","Delayed","Blocked","Paused","Cancelled"]
+                             && IsBlank(peComment.Text) },
+                      { Field: "Start Date", Bad: IsBlank(peStart.SelectedDate) },
+                      { Field: "Due Date",   Bad: IsBlank(peDue.SelectedDate) },
+                      { Field: "End Date is required when Status is Complete or Cancelled",
+                        Bad: peStatus.Selected.Value in ["Complete","Cancelled"] && IsBlank(peEnd.SelectedDate) },
+                      { Field: "End Date must be on or after Start Date",
+                        Bad: peStatus.Selected.Value in ["Complete","Cancelled"] && !IsBlank(peStart.SelectedDate)
+                             && !IsBlank(peEnd.SelectedDate) && peEnd.SelectedDate < peStart.SelectedDate },
+                      { Field: "A comment is required when changing the Due Date after work has started",
+                        Bad: !IsBlank(varSelected.Start) && varSelected.Start < Today()
+                             && peDue.SelectedDate <> varSelected.Due && IsBlank(peComment.Text) },
+                      { Field: "Description",
+                        Bad: IsBlank(peDesc.Text) },
+                      { Field: "Assigned To", Bad: IsBlank(peAssigned.Selected.Mail) },
+                      { Field: "Due Date must be on or after Start Date",
+                        Bad: !IsBlank(peStart.SelectedDate) && !IsBlank(peDue.SelectedDate)
+                             && peDue.SelectedDate < peStart.SelectedDate }
+                  ), Bad));
+              If(CountRows(varErrors) = 0,
+                  Patch('BOB Integrated Master Schedule (IMS)', varSelected,
+                      { Status: { Value: peStatus.Selected.Value },
+                        Description: peDesc.Text,
+                        Appraisal: { Value: peAppraisal.Selected.Value },
+                        Assigned: If(IsBlank(peAssigned.Selected.Mail), Blank(),
+                          { Claims: "i:0#.f|membership|" & Lower(peAssigned.Selected.Mail),
+                          DisplayName: peAssigned.Selected.DisplayName,
+                          Email: peAssigned.Selected.Mail,
+                          Department: "", JobTitle: "", Picture: "" }),
+                        Collaborators: ForAll(peCollab.SelectedItems As u,
+                          { Claims: "i:0#.f|membership|" & Lower(u.Mail),
+                          DisplayName: u.DisplayName,
+                          Email: u.Mail,
+                          Department: "", JobTitle: "", Picture: "" }),
+                        Start: peStart.SelectedDate,
+                        Due: peDue.SelectedDate,
+                        End: If(peStatus.Selected.Value in ["Complete","Cancelled"], peEnd.SelectedDate, Blank()),
+                        'Last Status Date': If(peStatus.Selected.Value <> varOldStatus,
+                                               Today(), varSelected.'Last Status Date') });
+                  If(!IsBlank(peComment.Text),
+                      Patch('BOB Integrated Master Schedule (IMS) Comments',
+                          Defaults('BOB Integrated Master Schedule (IMS) Comments'),
+                          { 'Work Item': { Id: varSelected.ID, Value: varSelected.'Task Name' },
+                            Comment: peComment.Text,
+                            'Status Change': If(peStatus.Selected.Value <> varOldStatus,
+                                                varOldStatus & " → " & peStatus.Selected.Value, "") }));
+                  UpdateIf(colItems, ID = varSelected.ID, { StatusText: peStatus.Selected.Value });
+                  UpdateIf(colRows, ItemId = varSelected.ID,
+                      { StatusText: peStatus.Selected.Value, RowStart: peStart.SelectedDate,
+                        RowDue: peDue.SelectedDate,
+                        AppraisalText: peAppraisal.Selected.Value,
+                        AssignedName: peAssigned.Selected.DisplayName,
+                        AssignedMail: peAssigned.Selected.Mail,
+                        CollabMails: Concat(peCollab.SelectedItems, Mail, ";") });
+                  Set(varSelected,
+                      LookUp('BOB Integrated Master Schedule (IMS)', ID = varSelected.ID));
+                  Reset(peComment);
+                  Reset(peDesc);
+                  Notify(If(peStatus.Selected.Value <> varOldStatus,
+                            "Saved — " & varOldStatus & " → " & peStatus.Selected.Value &
+                            " · Last Updated stamped", "Saved"),
+                         NotificationType.Success, 2600);
+                  Set(varPanelMode, "read"))
+            Size: =14
+            Text: ="Save"
+            Visible: =varPanelMode = "edit"
+            Width: =Parent.Width / 2 - 52
+            X: =Parent.Width / 2 + 26
+            Y: =Parent.Height - 118
+      - peBtnCancel:
+          Control: ModernButton@1.0.0
+          Properties:
+            Appearance: =ButtonAppearance.Outline
+            BasePaletteColor: =Navy
+            Color: =Navy
+            Height: =44
+            OnSelect: =Set(varErrors, Blank()); Set(varPanelMode, "read"); Reset(peDesc)
+            Size: =13
+            Text: ="Cancel"
+            Visible: =varPanelMode = "edit"
+            Width: =Parent.Width / 2 - 52
+            X: =Parent.Width / 2 + 26
+            Y: =Parent.Height - 62
+      - pnBtnCreate:
+          Control: ModernButton@1.0.0
+          Properties:
+            BasePaletteColor: =Navy
+            Color: =Color.White
+            DisplayMode: |-
+              =If(!varCanWrite || !varCanWriteET || !(pnLevel.Selected.Value in ["Line of Effort", "Epic", "Task"]),
+                  DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =48
+            OnSelect: |-
+              =Set(varErrors,
+                  Filter(Table(
+                      { Field: "Level",
+                        Bad: !(pnLevel.Selected.Value in ["Line of Effort", "Epic", "Task"]) },
+                      { Field: "Parent",
+                        Bad: If(pnLevel.Selected.Value = "Line of Effort",
+                                IsBlank(pnSection.Selected.Label),
+                                IsBlank(pnParent.Selected.ID)) },
+                      { Field: "Title",       Bad: IsBlank(pnTitle.Text) },
+                      { Field: "Title — a " & pnLevel.Selected.Value &
+                               " name """ & Trim(pnTitle.Text) & """ already exists",
+                               Bad: !IsBlank(pnTitle.Text)
+                               && CountRows(Filter(colItems,
+                                  LevelText = pnLevel.Selected.Value
+                                  && Lower(Trim('Task Name')) = Lower(Trim(pnTitle.Text)))) > 0 },
+                      { Field: "Description", Bad: IsBlank(pnDesc.Text) },
+                      { Field: "Assigned",    Bad: IsBlank(pnAssigned.Selected.Mail) },
+                      { Field: "Start Date",  Bad: IsBlank(pnStart.SelectedDate) },
+                      { Field: "Due Date",    Bad: IsBlank(pnDue.SelectedDate) },
+                      { Field: "Due Date must be on or after Start Date",
+                        Bad: !IsBlank(pnStart.SelectedDate) && !IsBlank(pnDue.SelectedDate)
+                             && pnDue.SelectedDate < pnStart.SelectedDate }
+                  ), Bad));
+              If(CountRows(varErrors) = 0,
+                  Set(varNewItem,
+                      Patch('BOB Integrated Master Schedule (IMS)',
+                          Defaults('BOB Integrated Master Schedule (IMS)'),
+                          { 'Task Name': pnTitle.Text,
+                            Description: pnDesc.Text,
+                            Level: { Value: pnLevel.Selected.Value },
+                            'Parent': If(pnLevel.Selected.Value = "Line of Effort",
+                                       Blank(),
+                                       { Id: pnParent.Selected.ID, Value: pnParent.Selected.'Task Name' }),
+                            'Line of Effort': varChain.LOE,
+                            Epic: varChain.Epic,
+                            Section: If(pnLevel.Selected.Value = "Line of Effort",
+                                        LookUp(Choices([@'BOB Integrated Master Schedule (IMS)'].Section,
+                                          pnSection.Selected.Label),
+                                          Label = pnSection.Selected.Label), 
+                                        pnParent.Selected.Section),
+                            Assigned: { Claims: "i:0#.f|membership|" & Lower(pnAssigned.Selected.Mail),
+                                      DisplayName: pnAssigned.Selected.DisplayName,
+                                      Email: pnAssigned.Selected.Mail,
+                                      Department: "", JobTitle: "", Picture: "" },
+                            Collaborators: ForAll(pnCollab.SelectedItems As u,
+                                      { Claims: "i:0#.f|membership|" & Lower(u.Mail),
+                                      DisplayName: u.DisplayName,
+                                      Email: u.Mail,
+                                      Department: "", JobTitle: "", Picture: "" }),
+                            Status: { Value: pnStatus.Selected.Value },
+                            Start: pnStart.SelectedDate,
+                            Due: pnDue.SelectedDate,
+                            End: If(pnStatus.Selected.Value in ["Complete","Cancelled"], Today(), Blank()) }));
+                  If(!IsBlank(varChain.Section) && !("S|" & varChain.Section in Filter(colExpanded, Tab = varTab).Key),
+                      Collect(colExpanded, { Tab: varTab, Key: "S|" & varChain.Section }));
+                  If(!IsBlank(varChain.LOE)
+                         && !("L|" & varChain.Section & "|" & varChain.LOE in Filter(colExpanded, Tab = varTab).Key),
+                      Collect(colExpanded, { Tab: varTab, Key: "L|" & varChain.Section & "|" & varChain.LOE }));
+                  Select(icoRefresh);
+                  Notify("Created """ & pnTitle.Text & """ under " &
+                         Coalesce(varChain.Epic, varChain.LOE, varChain.Section, "—"),
+                         NotificationType.Success, 2600);
+                  Set(varSelected, varNewItem);
+                  Set(varPanelMode, If(pnLevel.Selected.Value = "Line of Effort", "", "read")))
+            Size: =14
+            Text: ="Create"
+            Visible: =varPanelMode = "new"
+            Width: =Parent.Width / 2 - 52
+            X: =Parent.Width / 2 + 26
+            Y: =Parent.Height - 90
